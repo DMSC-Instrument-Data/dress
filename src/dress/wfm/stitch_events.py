@@ -46,7 +46,7 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
     # Make a high resolution array of bins that contain the frame number they belong to
     frames_x = edges_to_centers(np.linspace(xmin, xmax, nbins + 1))
     frame_id = np.array(
-        [get_frame_number(
+        [_get_frame_number(
             x, frames["left_edges"], frames["right_edges"])
          for x in frames_x])
     frame_bin_width = frames_x[1] - frames_x[0]
@@ -71,25 +71,36 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
     idx_glob = 0
     event_counter = 0
 
-    # Now go through each pulse, and then each event inside that pulse
-    # Find which frame that event belongs to (maybe discard it?) and shift its
-    # time of flight accordingly. If the event is discarded, the event_index is
-    # not incremented
-    for i in range(len(event_index) - 1):
-        if process_index:
-            stitched["index"][i] = idx
-        for j in range(event_index[i], event_index[i+1]):
-            fid = frame_id[int((time_offset[j] - xmin) / frame_bin_width)]
+    if process_index:
+        # Now go through each pulse, and then each event inside that pulse
+        # Find which frame that event belongs to (maybe discard it?) and shift its
+        # time of flight accordingly. If the event is discarded, the event_index is
+        # not incremented
+        for i in range(len(event_index) - 1):
+            if process_index:
+                stitched["index"][i] = idx
+            for j in range(event_index[i], event_index[i+1]):
+                fid = frame_id[int((time_offset[j] - xmin) / frame_bin_width)]
+                # If the frame id is -1, then we are in a frame gap and event is discarded
+                if fid > -1:
+                    ttt = time_offset[j] + frames["shifts"][fid]
+                    if ttt > 0.0:
+                        stitched["tof"][idx] = ttt
+                        if process_ids:
+                            stitched["ids"][idx] = event_id[j]
+                        idx += 1
+                        # if plot:
+                        #     individual_frames[fid].append(ttt)
+    else:
+        # Only process tofs
+        for i in range(nevents):
+            fid = frame_id[int((time_offset[i] - xmin) / frame_bin_width)]
             # If the frame id is -1, then we are in a frame gap and event is discarded
             if fid > -1:
-                ttt = time_offset[j] + frames["shifts"][fid]
+                ttt = time_offset[i] + frames["shifts"][fid]
                 if ttt > 0.0:
                     stitched["tof"][idx] = ttt
-                    if process_ids:
-                        stitched["ids"][idx] = event_id[j]
                     idx += 1
-                    # if plot:
-                    #     individual_frames[fid].append(ttt)
 
     # Discard trailing zeros
     stitched["tof"] = stitched["tof"][:idx]
