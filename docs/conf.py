@@ -12,7 +12,10 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src'))
+
+src = os.path.abspath('../src')
+os.environ['PYTHONPATH'] = src
+sys.path.insert(0, src)
 
 # -- Project information -----------------------------------------------------
 
