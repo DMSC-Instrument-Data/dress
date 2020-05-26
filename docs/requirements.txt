@@ -3,4 +3,4 @@ numpy
 h5py
 scipy
 nbsphinx
-jupyter_client
+jupyter
