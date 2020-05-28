@@ -1,4 +1,4 @@
 # dress
 Data Reduction for ESS
 
-Visit the documentation at https://dress.readthedocs.io/en/latest/
+Visit the documentation at https://dress.readthedocs.io
