@@ -1,7 +1,7 @@
 DRESS - Data Reduction for ESS
 ==============================
 
-This is a package containing the utilities to perform data reduction at ESS.
+This is a Python package that provides tools to perform neutron data reduction at the European Spallation Source.
 
 Documentation
 =============
