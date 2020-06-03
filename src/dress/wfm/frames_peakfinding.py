@@ -9,9 +9,9 @@ from matplotlib.patches import Rectangle
 
 
 def _tof_shifts(pscdata, psc_frequency=0):
-    cut_out_centre = np.reshape(pscdata,(len(pscdata)//2, 2)).mean(1)
+    cut_out_centre = np.reshape(pscdata, (len(pscdata) // 2, 2)).mean(1)
     cut_out_diffs = np.ediff1d(cut_out_centre)
-    return cut_out_diffs / (360.0*psc_frequency)
+    return cut_out_diffs / (360.0 * psc_frequency)
 
 
 def _get_frame_shifts(instrument):
@@ -23,12 +23,11 @@ def _get_frame_shifts(instrument):
     """
 
     # Factor of 0.5 * 1.0e6  comes from taking mean and converting to microseconds
-    relative_shifts = (
-        _tof_shifts(instrument["choppers"]["WFM1"].openings,
-                    psc_frequency=instrument["choppers"]["WFM1"].frequency) +
-        _tof_shifts(instrument["choppers"]["WFM2"].openings,
-                    psc_frequency=instrument["choppers"]["WFM2"].frequency)
-        ) * 5.0e+05
+    relative_shifts = (_tof_shifts(
+        instrument["choppers"]["WFM1"].openings,
+        psc_frequency=instrument["choppers"]["WFM1"].frequency) + _tof_shifts(
+            instrument["choppers"]["WFM2"].openings,
+            psc_frequency=instrument["choppers"]["WFM2"].frequency)) * 5.0e+05
     return -relative_shifts
 
 
@@ -50,26 +49,35 @@ def _make_frame_shifts(initial_shift, other_shifts=None):
     :return: List of absolute frame shifts in microseconds.
     """
     frame_shift_increments = [initial_shift] + list(other_shifts)
-    frame_shifts = [sum(frame_shift_increments[:i + 1]) for i in
-                    range(len(frame_shift_increments))]
+    frame_shifts = [
+        sum(frame_shift_increments[:i + 1])
+        for i in range(len(frame_shift_increments))
+    ]
 
     print("The frame_shifts are:", frame_shifts)
 
     return frame_shifts
 
 
-def frames_peakfinding(data=None, instrument=None, initial_shift=-6630,
-                       plot=False, verbose=False, nbins=512,
-                       bg_threshold=0.05, peak_prominence=0.05,
-                       gsmooth=2, inter_frame_threshold=1.5,
+def frames_peakfinding(data=None,
+                       instrument=None,
+                       initial_shift=-6630,
+                       plot=False,
+                       verbose=False,
+                       nbins=512,
+                       bg_threshold=0.05,
+                       peak_prominence=0.05,
+                       gsmooth=2,
+                       inter_frame_threshold=1.5,
                        inter_frame_gaps=800.0):
     """
 
 
     """
 
-    frame_shifts = _make_frame_shifts(initial_shift, _get_frame_shifts(instrument))
-    
+    frame_shifts = _make_frame_shifts(initial_shift,
+                                      _get_frame_shifts(instrument))
+
     if "events" in data:
         # Find min and max in event time-of-arrival (TOA)
         xmin = np.amin(data["events"])
@@ -98,7 +106,6 @@ def frames_peakfinding(data=None, instrument=None, initial_shift=-6630,
     if plot:
         ax.plot(x, y, color="lightgray", label="Gaussian smoothed", lw=1)
 
-
     # Minimum and maximum values in the histogram
     ymin = np.amin(y)
     ymax = np.amax(y)
@@ -113,34 +120,38 @@ def frames_peakfinding(data=None, instrument=None, initial_shift=-6630,
     # Find the leading and trailing edges; i.e. the leftmost and rightmost
     # points that exceed the background value
     i_start = 0
-    i_end = nx-1
+    i_end = nx - 1
     for i in range(nx):
         if y[i] > bg_value:
             i_start = i
             break
-    for i in range(nx-1,1,-1):
+    for i in range(nx - 1, 1, -1):
         if y[i] > bg_value:
             i_end = i
             break
 
-
     # Find valleys with scipy.signal.find_peaks by inverting the y array
-    peaks, params = find_peaks(-y, prominence=peak_prominence*(ymax-ymin),
-                               distance=nbins//20)
+    peaks, params = find_peaks(-y,
+                               prominence=peak_prominence * (ymax - ymin),
+                               distance=nbins // 20)
 
     # Check for unwanted peaks:
     # 1. If a peak is found inside the noise leading the signal, it will often
     # have a zero left base
     to_be_removed = []
     for p in range(len(peaks)):
-        if params["left_bases"][p] < nbins//10:
-            print("Removed peak number {} at x,y = {},{} because of a bad left base".format(p,x[peaks[p]],y[peaks[p]]))
+        if params["left_bases"][p] < nbins // 10:
+            print(
+                "Removed peak number {} at x,y = {},{} because of a bad left base"
+                .format(p, x[peaks[p]], y[peaks[p]]))
             to_be_removed.append(p)
     # 2. If there are peaks in the middle of a frame, then the y value is high
     threshold = inter_frame_threshold * bg_value
     for p in range(len(peaks)):
         if y[peaks[p]] > threshold:
-            print("Removed peak number {} at x,y = {},{} because the y value exceeds the threshold {}".format(p, x[peaks[p]], y[peaks[p]], threshold))
+            print(
+                "Removed peak number {} at x,y = {},{} because the y value exceeds the threshold {}"
+                .format(p, x[peaks[p]], y[peaks[p]], threshold))
             to_be_removed.append(p)
     # Actually remove the peaks
     peaks = np.delete(peaks, to_be_removed)
@@ -156,7 +167,7 @@ def frames_peakfinding(data=None, instrument=None, initial_shift=-6630,
     frame_boundaries[-1, 1] = x[i_end]
     for i, g in enumerate(frame_gaps):
         frame_boundaries[i, 1] = g - 0.5 * inter_frame_gaps[i]
-        frame_boundaries[i+1, 0] = g + 0.5 * inter_frame_gaps[i]
+        frame_boundaries[i + 1, 0] = g + 0.5 * inter_frame_gaps[i]
 
     # Plot the diagnostics
     if plot:
@@ -167,13 +178,22 @@ def frames_peakfinding(data=None, instrument=None, initial_shift=-6630,
         yl = ax.get_ylim()
         for i in range(instrument["info"]["nframes"]):
             col = "C{}".format(i)
-            ax.add_patch(Rectangle((frame_boundaries[i, 0], yl[0]),
-                frame_boundaries[i, 1]-frame_boundaries[i, 0], yl[1]-yl[0],
-                fc=col, alpha=0.4, ec="none"))
+            ax.add_patch(
+                Rectangle((frame_boundaries[i, 0], yl[0]),
+                          frame_boundaries[i, 1] - frame_boundaries[i, 0],
+                          yl[1] - yl[0],
+                          fc=col,
+                          alpha=0.4,
+                          ec="none"))
             ax.axvline(x=frame_boundaries[i, 0], color=col)
             ax.axvline(x=frame_boundaries[i, 1], color=col)
-        ax.add_patch(Rectangle((xl[0], yl[0]), xl[1]-xl[0], bg_value-yl[0],
-            fc='lightgray', ec='none', zorder=-10))
+        ax.add_patch(
+            Rectangle((xl[0], yl[0]),
+                      xl[1] - xl[0],
+                      bg_value - yl[0],
+                      fc='lightgray',
+                      ec='none',
+                      zorder=-10))
         ax.set_xlim(xl)
         ax.set_ylim(yl)
         if isinstance(plot, str):
@@ -182,9 +202,11 @@ def frames_peakfinding(data=None, instrument=None, initial_shift=-6630,
             figname = "frames_peakfinding.pdf"
         fig.savefig(figname, bbox_inches="tight")
 
-    frames = {"left_edge": np.array([f[0] for f in frame_boundaries]),
-                    "right_edge": np.array([f[1] for f in frame_boundaries]),
-                    "gaps": np.array(frame_gaps),
-                    "shifts": np.array(frame_shifts)}
+    frames = {
+        "left_edge": np.array([f[0] for f in frame_boundaries]),
+        "right_edge": np.array([f[1] for f in frame_boundaries]),
+        "gaps": np.array(frame_gaps),
+        "shifts": np.array(frame_shifts)
+    }
 
     return frames

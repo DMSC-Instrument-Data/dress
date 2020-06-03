@@ -14,6 +14,7 @@ def _get_frame_number(x, ledges, redges):
             break
     return n
 
+
 def stitch_events(events=None, frames=None, plot=False, nbins=5000):
     """
     This function takes in a list of events
@@ -42,13 +43,12 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
         for g in frames["gaps"]:
             ax[0].axvline(x=g, color="r")
 
-
     # Make a high resolution array of bins that contain the frame number they belong to
     frames_x = edges_to_centers(np.linspace(xmin, xmax, nbins + 1))
-    frame_id = np.array(
-        [_get_frame_number(
-            x, frames["left_edges"], frames["right_edges"])
-         for x in frames_x])
+    frame_id = np.array([
+        _get_frame_number(x, frames["left_edges"], frames["right_edges"])
+        for x in frames_x
+    ])
     frame_bin_width = frames_x[1] - frames_x[0]
 
     # Allocate new arrays
@@ -66,7 +66,6 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
         stitched["index"] = np.zeros_like(event_index)
         process_index = True
 
-
     idx = 0
     idx_glob = 0
     event_counter = 0
@@ -79,7 +78,7 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
         for i in range(len(event_index) - 1):
             if process_index:
                 stitched["index"][i] = idx
-            for j in range(event_index[i], event_index[i+1]):
+            for j in range(event_index[i], event_index[i + 1]):
                 fid = frame_id[int((time_offset[j] - xmin) / frame_bin_width)]
                 # If the frame id is -1, then we are in a frame gap and event is discarded
                 if fid > -1:
@@ -106,7 +105,6 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
     stitched["tof"] = stitched["tof"][:idx]
     if process_ids:
         stitched["ids"] = stitched["ids"][:idx]
-
 
     if plot:
         y, _ = np.histogram(stitched["tof"], bins=edges)

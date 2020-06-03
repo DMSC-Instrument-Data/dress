@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def edges_to_centers(x):
     """
     Convert array edges to centers

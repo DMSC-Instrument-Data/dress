@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 
-
 def frames_analytical(instrument=None, plot=False):
 
     info = instrument["info"]
@@ -32,14 +31,30 @@ def frames_analytical(instrument=None, plot=False):
             dist = [ch.distance, ch.distance]
             for i in range(0, len(ch.openings), 2):
                 t1 = (ch.openings[i] + ch.phase) / ch.omega * microseconds
-                t2 = (ch.openings[i+1] + ch.phase) / ch.omega * microseconds
-                ax.plot([t1, t2], dist, color="C{}".format(i//2))
-            ax.text(t2 + (t2-t1), ch.distance, ch.name, ha="left", va="center")
+                t2 = (ch.openings[i + 1] + ch.phase) / ch.omega * microseconds
+                ax.plot([t1, t2], dist, color="C{}".format(i // 2))
+            ax.text(t2 + (t2 - t1),
+                    ch.distance,
+                    ch.name,
+                    ha="left",
+                    va="center")
 
         psize = info["detector_position"] / 50.0
-        rect = Rectangle((x0, y0), x1, -psize, lw=1, fc='orange', ec='k', hatch="////", zorder=10)
+        rect = Rectangle((x0, y0),
+                         x1,
+                         -psize,
+                         lw=1,
+                         fc='orange',
+                         ec='k',
+                         hatch="////",
+                         zorder=10)
         ax.add_patch(rect)
-        ax.text(x0, -psize, "Source pulse (2.86 ms)", ha="left", va="top", fontsize=6)
+        ax.text(x0,
+                -psize,
+                "Source pulse (2.86 ms)",
+                ha="left",
+                va="top",
+                fontsize=6)
 
     # Now find frame boundaries and draw frames
     frame_boundaries = []
@@ -55,8 +70,10 @@ def frames_analytical(instrument=None, plot=False):
             # For now, ignore Wavelength band double chopper
             if len(ch.openings) == info["nframes"] * 2:
 
-                xmin = (ch.openings[i*2] + ch.phase) / ch.omega * microseconds
-                xmax = (ch.openings[i*2+1] + ch.phase) / ch.omega * microseconds
+                xmin = (ch.openings[i * 2] +
+                        ch.phase) / ch.omega * microseconds
+                xmax = (ch.openings[i * 2 + 1] +
+                        ch.phase) / ch.omega * microseconds
                 slope1 = (ch.distance - y1) / (xmin - x1)
                 slope2 = (ch.distance - y0) / (xmax - x0)
 
@@ -79,28 +96,46 @@ def frames_analytical(instrument=None, plot=False):
         y5 = info["detector_position"]
 
         # This is the frame boundaries
-        x5 = (y5 - b1)/a1
-        x4 = (y4 - b2)/a2
+        x5 = (y5 - b1) / a1
+        x4 = (y4 - b2) / a2
         frame_boundaries.append([x4, x5])
 
         # Compute frame shifts from fastest neutrons in frame
-        frame_shifts.append(-(info["wfm_choppers_midpoint"] - b2)/a2)
+        frame_shifts.append(-(info["wfm_choppers_midpoint"] - b2) / a2)
 
         if plot:
             col = "C{}".format(i)
             ax.fill([x0, x1, x4, x5], [y0, y1, y4, y5], alpha=0.3, color=col)
             ax.plot([x0, x5], [y0, y5], color=col, lw=1)
             ax.plot([x1, x4], [y1, y4], color=col, lw=1)
-            ax.text(0.5*(x4+x5), info["detector_position"], "Frame {}".format(i+1), ha="center", va="top")
-
+            ax.text(0.5 * (x4 + x5),
+                    info["detector_position"],
+                    "Frame {}".format(i + 1),
+                    ha="center",
+                    va="top")
 
     if plot:
         # Plot detector location
-        ax.plot([0, np.amax(frame_boundaries)], [info["detector_position"], info["detector_position"]], lw=3, color='grey')
-        ax.text(0.0, info["detector_position"], "Detector", va="bottom", ha="left")
+        ax.plot([0, np.amax(frame_boundaries)],
+                [info["detector_position"], info["detector_position"]],
+                lw=3,
+                color='grey')
+        ax.text(0.0,
+                info["detector_position"],
+                "Detector",
+                va="bottom",
+                ha="left")
         # Plot WFM choppers mid-point
-        ax.plot([0, np.amax(frame_boundaries)], [info["wfm_choppers_midpoint"], info["wfm_choppers_midpoint"]], lw=1, color='grey', ls="dashed")
-        ax.text(np.amax(frame_boundaries), info["wfm_choppers_midpoint"], "WFM chopper mid-point", va="bottom", ha="right")
+        ax.plot([0, np.amax(frame_boundaries)],
+                [info["wfm_choppers_midpoint"], info["wfm_choppers_midpoint"]],
+                lw=1,
+                color='grey',
+                ls="dashed")
+        ax.text(np.amax(frame_boundaries),
+                info["wfm_choppers_midpoint"],
+                "WFM chopper mid-point",
+                va="bottom",
+                ha="right")
         # Save the figure
         ax.set_xlabel("Time [microseconds]")
         ax.set_ylabel("Distance [m]")
@@ -116,12 +151,16 @@ def frames_analytical(instrument=None, plot=False):
     #     print("The frame gaps are:", frame_gaps)
     #     print("The frame shifts are:", frame_shifts)
 
-    frame_gaps = [0.5*(frame_boundaries[i][1]+frame_boundaries[i+1][0]) for i in range(len(frame_boundaries)-1)]
+    frame_gaps = [
+        0.5 * (frame_boundaries[i][1] + frame_boundaries[i + 1][0])
+        for i in range(len(frame_boundaries) - 1)
+    ]
 
-    frames = {"left_edges": np.array([f[0] for f in frame_boundaries]),
-                    "right_edges": np.array([f[1] for f in frame_boundaries]),
-                    "gaps": np.array(frame_gaps),
-                    "shifts": np.array(frame_shifts)}
-
+    frames = {
+        "left_edges": np.array([f[0] for f in frame_boundaries]),
+        "right_edges": np.array([f[1] for f in frame_boundaries]),
+        "gaps": np.array(frame_gaps),
+        "shifts": np.array(frame_shifts)
+    }
 
     return frames

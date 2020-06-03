@@ -6,9 +6,13 @@ def deg_to_rad(x):
 
 
 class Chopper:
-
-    def __init__(self, frequency=0, openings=None, distance=0, phase=0,
-                 unit="rad", name=""):
+    def __init__(self,
+                 frequency=0,
+                 openings=None,
+                 distance=0,
+                 phase=0,
+                 unit="rad",
+                 name=""):
         # openings is list. First entry is start angle of the first cut-out
         # second entry is end angle of first cut-out, etc.
         self.frequency = frequency

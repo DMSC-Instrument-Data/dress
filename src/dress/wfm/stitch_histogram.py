@@ -1,6 +1,7 @@
 import numpy as np
 from .tools import centers_to_edges, edges_to_centers
 
+
 def stitch_histogram(x=None, y=None, frames=None):
     """
     Stitch a N-dimensional array containing histogram data.
@@ -30,15 +31,17 @@ def stitch_histogram(x=None, y=None, frames=None):
     for i in range(nx):
         ok = 0
         for j in range(len(frames["shifts"])):
-            if xe[i] > frames["left_edges"][j] and xe[i] < frames["right_edges"][j]:
+            if xe[i] > frames["left_edges"][j] and xe[i] < frames[
+                    "right_edges"][j]:
                 # compute new index after time shift
                 idl = int((xe[i] + frames["shifts"][j] - xmin) / dx)
                 ok += 1
                 break
         for j in range(len(frames["shifts"])):
-            if xe[i+1] > frames["left_edges"][j] and xe[i+1] < frames["right_edges"][j]:
+            if xe[i + 1] > frames["left_edges"][j] and xe[
+                    i + 1] < frames["right_edges"][j]:
                 # compute new index after time shift
-                idr = int((xe[i+1] + frames["shifts"][j] - xmin) / dx)
+                idr = int((xe[i + 1] + frames["shifts"][j] - xmin) / dx)
                 ok += 1
                 break
         if ok == 2:
