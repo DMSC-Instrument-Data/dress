@@ -1,17 +1,22 @@
 """
 
 """
+
+# Dress imports
+from . import v20
+from .wfm import get_frames
+from .stitch_events import stitch_events
+
+# Other imports
 import h5py
 import numpy as np
 from shutil import copyfile
 from os.path import join
-from . import v20
-from .wfm import get_frames
 
 
 def _stitch_file(file_handle, entry=None, frames=None, plot=False):
     """
-    
+    Read events inside given file, and stitch events according to frames.
     """
 
     # Get time offsets from file
@@ -27,7 +32,6 @@ def _stitch_file(file_handle, entry=None, frames=None, plot=False):
     events["index"] = np.array(file_handle[entry + "event_index"][...],
                                dtype=np.uint64,
                                copy=True)
-    # event_time_zero = np.array(input_file[entry + "event_time_zero"][...], dtype=np.uint64, copy=True)
 
     # Stitch the data
     stitched = stitch_events(events=events, frames=frames, plot=plot)
@@ -36,10 +40,16 @@ def _stitch_file(file_handle, entry=None, frames=None, plot=False):
     file_handle[entry + "event_index"][...] = stitched["index"]
     # Delete old event_id and event_time_offset
     del file_handle[entry + "event_id"]
+    del file_handle[entry + "event_index"]
     del file_handle[entry + "event_time_offset"]
     # Create new event_id and event_time_offset
     event_id_ds = file_handle[entry].create_dataset('event_id',
                                                     stitched["ids"].shape,
+                                                    data=stitched["ids"],
+                                                    compression='gzip',
+                                                    compression_opts=1)
+    event_index_ds = file_handle[entry].create_dataset('event_index',
+                                                    stitched["index"].shape,
                                                     data=stitched["index"],
                                                     compression='gzip',
                                                     compression_opts=1)
@@ -54,14 +64,19 @@ def _stitch_file(file_handle, entry=None, frames=None, plot=False):
     return
 
 
-def stitch_files(input_files=None, entries=None, plot=False, frames=None):
+def stitch_files(files=None, entries=None, plot=False, frames=None):
 
-    if isinstance(input_files, str):
-        input_files = input_files.split(",")
-    elif not isinstance(input_files, list):
-        input_files = [input_files]
+    if isinstance(files, str):
+        files = files.split(",")
+    elif not isinstance(files, list):
+        files = [files]
 
-    for f in input_files:
+    v20setup = v20.setup()
+    v20frames = get_frames(instrument=v20setup)
+
+    for f in files:
+
+        print("\nProcessing file:", f)
 
         ext = ".{}".format(f.split(".")[-1])
         outfile = f.replace(ext, "_stitched" + ext)
@@ -70,16 +85,16 @@ def stitch_files(input_files=None, entries=None, plot=False, frames=None):
 
         # Automatically find event entries if not specified
         if entries is None:
-            entries = []
+            entries_ = []
             key = "event_time_offset"
             with h5py.File(outfile, "r") as f:
                 contents = []
                 f.visit(contents.append)
             for item in contents:
                 if item.endswith(key):
-                    entries.append(item.replace(key, ""))
+                    entries_.append(item.replace(key, ""))
         else:
-            entries = entries.split(",")
+            entries_ = entries.split(",")
 
         # Loop through entries and shift event tofs
         with h5py.File(outfile, "r+") as outf:
@@ -87,15 +102,21 @@ def stitch_files(input_files=None, entries=None, plot=False, frames=None):
             # Compute WFM frame shifts and boundaries from V20 setup
             if frames is None:
                 v20setup = v20.setup(filename=outf)
-                frames = get_frames(instrument=v20setup)
-                # v20setup["info"], v20setup["choppers"])
+                # v20setup = v20.setup()
+                v20frames = get_frames(instrument=v20setup)
 
-            for e in entries:
+            for e in entries_:
                 print("==================")
                 print("Entry:", e)
                 this_plot = plot
                 if plot is True:
-                    this_plot = outfile + "-" + entry + ".pdf"
+                    this_plot = (outfile + "-" + e + ".pdf").replace("/", "_")
+
+                if e.count("monitor") > 0:
+                    frames = v20frames["monitor"]
+                else:
+                    frames = v20frames["DENEX"]
+
                 _stitch_file(file_handle=outf,
                              entry=e,
                              frames=frames,

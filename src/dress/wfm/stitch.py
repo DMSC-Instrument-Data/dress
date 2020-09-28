@@ -9,4 +9,4 @@ def stitch(x=None, y=None, files=None, frames=None, **kwargs):
     if x is not None:
         return stitch_events(events=x, frames=frames, **kwargs)
     if files is not None:
-        return stitch_files(files=files, **kwargs)
+        return stitch_files(files=files, frames=frames, **kwargs)

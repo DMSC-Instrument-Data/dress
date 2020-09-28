@@ -35,11 +35,12 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
     xmax += dx
 
     if plot:
+        import matplotlib.pyplot as plt
         # Histogram the events for plotting
         y, edges = np.histogram(time_offset, bins=np.linspace(xmin, xmax, 513))
         x = 0.5 * (edges[:-1] + edges[1:])
         fig, ax = plt.subplots(2, 1, figsize=(8, 8))
-        ax[0].plot(x, y, color='k', label="Raw data")
+        ax[0].plot(x, y, label="Raw data")
         for g in frames["gaps"]:
             ax[0].axvline(x=g, color="r")
 
@@ -109,7 +110,7 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
     if plot:
         y, _ = np.histogram(stitched["tof"], bins=edges)
         x = 0.5 * (edges[:-1] + edges[1:])
-        ax[1].plot(x, y, lw=3, color="k", label="Stitched data")
+        ax[1].plot(x, y, lw=3, label="Stitched data")
         ax[0].grid(True, color='gray', linestyle="dotted")
         ax[0].set_axisbelow(True)
         ax[1].grid(True, color='gray', linestyle="dotted")

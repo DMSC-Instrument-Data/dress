@@ -33,6 +33,7 @@ def setup(file_handle=None):
             openings = np.array(file_handle[slits][...],
                                 dtype=np.float64,
                                 copy=True)
+
     choppers["WFM1"] = Chopper(frequency=frequency,
                                openings=openings,
                                phase=47.10,
@@ -92,11 +93,8 @@ def setup(file_handle=None):
     # Length of pulse
     info["pulse_length"] = 2.86e-03
 
-    # Position of detector
-    # detector_position = 28.98 # 32.4
-    info["detector_position"] = 28.42  # 32.4
-    # # Monitor
-    # detector_position = 25
+    # Position of detectors
+    info["detector_positions"] = {"DENEX": 28.42, "monitor": 25.6}
 
     # Midpoint between WFM choppers which acts as new source distance for stitched data
     info["wfm_choppers_midpoint"] = 0.5 * (choppers["WFM1"].distance +

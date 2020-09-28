@@ -3,20 +3,21 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 
-def frames_analytical(instrument=None, plot=False):
+def frames_analytical(instrument=None, plot=False, offset=0.0):
 
     info = instrument["info"]
     choppers = instrument["choppers"]
 
+    # Find key of detector furthest away from source
+    imax = np.argmax(list(info["detector_positions"].values()))
+    det_last = list(info["detector_positions"].keys())[imax]
+
     # Seconds to microseconds
     microseconds = 1.0e6
 
-    # Frame colors
-    # colors = ['b', 'k', 'g', 'r', 'cyan', 'magenta']
-
     # Define and draw source pulse
-    x0 = 0.0
-    x1 = info["pulse_length"] * microseconds
+    x0 = 0.0 + offset
+    x1 = (info["pulse_length"] * microseconds) + offset
     y0 = 0.0
     y1 = 0.0
 
@@ -30,8 +31,8 @@ def frames_analytical(instrument=None, plot=False):
         for key, ch in choppers.items():
             dist = [ch.distance, ch.distance]
             for i in range(0, len(ch.openings), 2):
-                t1 = (ch.openings[i] + ch.phase) / ch.omega * microseconds
-                t2 = (ch.openings[i + 1] + ch.phase) / ch.omega * microseconds
+                t1 = (ch.openings[i] + ch.phase) / ch.omega * microseconds + offset
+                t2 = (ch.openings[i + 1] + ch.phase) / ch.omega * microseconds + offset
                 ax.plot([t1, t2], dist, color="C{}".format(i // 2))
             ax.text(t2 + (t2 - t1),
                     ch.distance,
@@ -39,9 +40,9 @@ def frames_analytical(instrument=None, plot=False):
                     ha="left",
                     va="center")
 
-        psize = info["detector_position"] / 50.0
+        psize = info["detector_positions"][det_last] / 50.0
         rect = Rectangle((x0, y0),
-                         x1,
+                         x1 - x0,
                          -psize,
                          lw=1,
                          fc='orange',
@@ -57,8 +58,13 @@ def frames_analytical(instrument=None, plot=False):
                 fontsize=6)
 
     # Now find frame boundaries and draw frames
-    frame_boundaries = []
-    frame_shifts = []
+    frames = {}
+    for det in info["detector_positions"]:
+        frames[det] = {
+            "left_edges": [],
+            "right_edges": [],
+            "shifts": []
+        }
 
     for i in range(info["nframes"]):
 
@@ -71,9 +77,9 @@ def frames_analytical(instrument=None, plot=False):
             if len(ch.openings) == info["nframes"] * 2:
 
                 xmin = (ch.openings[i * 2] +
-                        ch.phase) / ch.omega * microseconds
+                        ch.phase) / ch.omega * microseconds + offset
                 xmax = (ch.openings[i * 2 + 1] +
-                        ch.phase) / ch.omega * microseconds
+                        ch.phase) / ch.omega * microseconds + offset
                 slope1 = (ch.distance - y1) / (xmin - x1)
                 slope2 = (ch.distance - y0) / (xmax - x0)
 
@@ -92,46 +98,54 @@ def frames_analytical(instrument=None, plot=False):
         b1 = y0 - a1 * x0
         b2 = y1 - a2 * x1
 
-        y4 = info["detector_position"]
-        y5 = info["detector_position"]
+        for det in info["detector_positions"]:
+            y4 = info["detector_positions"][det]
+            y5 = info["detector_positions"][det]
 
-        # This is the frame boundaries
-        x5 = (y5 - b1) / a1
-        x4 = (y4 - b2) / a2
-        frame_boundaries.append([x4, x5])
+            # This is the frame boundaries
+            x5 = (y5 - b1) / a1
+            x4 = (y4 - b2) / a2
+            frames[det]["left_edges"].append(x4)
+            frames[det]["right_edges"].append(x5)
 
-        # Compute frame shifts from fastest neutrons in frame
-        frame_shifts.append(-(info["wfm_choppers_midpoint"] - b2) / a2)
+            # Compute frame shifts from fastest neutrons in frame
+            frames[det]["shifts"].append(-(info["wfm_choppers_midpoint"] - b2) / a2)
 
         if plot:
             col = "C{}".format(i)
-            ax.fill([x0, x1, x4, x5], [y0, y1, y4, y5], alpha=0.3, color=col)
-            ax.plot([x0, x5], [y0, y5], color=col, lw=1)
-            ax.plot([x1, x4], [y1, y4], color=col, lw=1)
-            ax.text(0.5 * (x4 + x5),
-                    info["detector_position"],
+            ax.fill([x0, x1, frames[det_last]["left_edges"][-1],
+                frames[det_last]["right_edges"][-1]],
+                [y0, y1, info["detector_positions"][det_last],
+                info["detector_positions"][det_last]], alpha=0.3, color=col)
+            ax.plot([x0, frames[det_last]["right_edges"][-1]],
+                    [y0, info["detector_positions"][det_last]], color=col, lw=1)
+            ax.plot([x1, frames[det_last]["left_edges"][-1]],
+                    [y1, info["detector_positions"][det_last]], color=col, lw=1)
+            ax.text(0.5 * (frames[det_last]["left_edges"][-1] + frames[det_last]["right_edges"][-1]),
+                    info["detector_positions"][det_last],
                     "Frame {}".format(i + 1),
                     ha="center",
                     va="top")
 
     if plot:
-        # Plot detector location
-        ax.plot([0, np.amax(frame_boundaries)],
-                [info["detector_position"], info["detector_position"]],
-                lw=3,
-                color='grey')
-        ax.text(0.0,
-                info["detector_position"],
-                "Detector",
-                va="bottom",
-                ha="left")
+        for det, dist in info["detector_positions"].items():
+            # Plot detector location
+            ax.plot([0, np.amax(frames[det]["right_edges"])],
+                    [dist, dist],
+                    lw=3,
+                    color='grey')
+            ax.text(0.0,
+                    dist,
+                    det,
+                    va="bottom",
+                    ha="left")
         # Plot WFM choppers mid-point
-        ax.plot([0, np.amax(frame_boundaries)],
+        ax.plot([0, np.amax(frames[det_last]["right_edges"])],
                 [info["wfm_choppers_midpoint"], info["wfm_choppers_midpoint"]],
                 lw=1,
                 color='grey',
                 ls="dashed")
-        ax.text(np.amax(frame_boundaries),
+        ax.text(np.amax(frames[det_last]["right_edges"]),
                 info["wfm_choppers_midpoint"],
                 "WFM chopper mid-point",
                 va="bottom",
@@ -145,22 +159,11 @@ def frames_analytical(instrument=None, plot=False):
             figname = "frames_analytical.pdf"
         fig.savefig(figname, bbox_inches="tight")
 
-    # if verbose:
-    #     # Print results
-    #     print("The frame boundaries are:", frame_boundaries)
-    #     print("The frame gaps are:", frame_gaps)
-    #     print("The frame shifts are:", frame_shifts)
-
-    frame_gaps = [
-        0.5 * (frame_boundaries[i][1] + frame_boundaries[i + 1][0])
-        for i in range(len(frame_boundaries) - 1)
-    ]
-
-    frames = {
-        "left_edges": np.array([f[0] for f in frame_boundaries]),
-        "right_edges": np.array([f[1] for f in frame_boundaries]),
-        "gaps": np.array(frame_gaps),
-        "shifts": np.array(frame_shifts)
-    }
+    for det in frames:
+        for key in frames[det]:
+            frames[det][key] = np.array(frames[det][key])
+        frames[det]["gaps"] = np.array([
+            0.5 * (frames[det]["right_edges"][i] + frames[det]["left_edges"][i + 1])
+            for i in range(len(frames[det]["right_edges"]) - 1)])
 
     return frames
