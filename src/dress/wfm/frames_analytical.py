@@ -98,6 +98,17 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
         b1 = y0 - a1 * x0
         b2 = y1 - a2 * x1
 
+        # Compute frame shifts from WFM chopper openings centre of mass
+        s0 = (choppers["WFM1"].openings[i * 2] +
+            choppers["WFM1"].phase) / choppers["WFM1"].omega * microseconds + offset
+        s1 = (choppers["WFM1"].openings[i * 2 + 1] +
+            choppers["WFM1"].phase) / choppers["WFM1"].omega * microseconds + offset
+        s2 = (choppers["WFM2"].openings[i * 2] +
+            choppers["WFM2"].phase) / choppers["WFM2"].omega * microseconds + offset
+        s3 = (choppers["WFM2"].openings[i * 2 + 1] +
+            choppers["WFM2"].phase) / choppers["WFM2"].omega * microseconds + offset
+        shift = -0.25 * (s0 + s1 + s2 + s3)
+
         for det in info["detector_positions"]:
             y4 = info["detector_positions"][det]
             y5 = info["detector_positions"][det]
@@ -107,9 +118,7 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
             x4 = (y4 - b2) / a2
             frames[det]["left_edges"].append(x4)
             frames[det]["right_edges"].append(x5)
-
-            # Compute frame shifts from fastest neutrons in frame
-            frames[det]["shifts"].append(-(info["wfm_choppers_midpoint"] - b2) / a2)
+            frames[det]["shifts"].append(shift)
 
         if plot:
             col = "C{}".format(i)

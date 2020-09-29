@@ -94,7 +94,8 @@ def setup(file_handle=None):
     info["pulse_length"] = 2.86e-03
 
     # Position of detectors
-    info["detector_positions"] = {"DENEX": 28.42, "monitor": 25.6}
+    info["detector_positions"] = {"DENEX": 30.6, "monitor": 25.7}
+    # info["detector_positions"] = {"DENEX": 28.42, "monitor": 25.6}
 
     # Midpoint between WFM choppers which acts as new source distance for stitched data
     info["wfm_choppers_midpoint"] = 0.5 * (choppers["WFM1"].distance +

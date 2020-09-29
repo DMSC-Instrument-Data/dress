@@ -123,6 +123,13 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
         ax[1].set_ylabel("Counts")
         ax[0].legend()
         ax[1].legend()
+        ax[0].set_yscale("log")
+        ax[1].set_yscale("log")
+        for i in range(len(frames["left_edges"])):
+            col = "C{}".format(i)
+            ax[1].axvspan(frames["left_edges"][i] + frames["shifts"][i],
+                          frames["right_edges"][i] + frames["shifts"][i],
+                          color=col, alpha=0.5)
         if isinstance(plot, str):
             figname = plot
         else:
