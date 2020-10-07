@@ -3,6 +3,7 @@
 """
 
 # Dress imports
+from ..load import load
 from . import v20
 from .wfm import get_frames
 from .stitch_events import stitch_events
@@ -49,10 +50,10 @@ def _stitch_file(file_handle, entry=None, frames=None, plot=False):
                                                     compression='gzip',
                                                     compression_opts=1)
     event_index_ds = file_handle[entry].create_dataset('event_index',
-                                                    stitched["index"].shape,
-                                                    data=stitched["index"],
-                                                    compression='gzip',
-                                                    compression_opts=1)
+                                                       stitched["index"].shape,
+                                                       data=stitched["index"],
+                                                       compression='gzip',
+                                                       compression_opts=1)
     event_offset_ds = file_handle[entry].create_dataset(
         'event_time_offset',
         stitched["tof"].shape,

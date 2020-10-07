@@ -31,8 +31,10 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
         for key, ch in choppers.items():
             dist = [ch.distance, ch.distance]
             for i in range(0, len(ch.openings), 2):
-                t1 = (ch.openings[i] + ch.phase) / ch.omega * microseconds + offset
-                t2 = (ch.openings[i + 1] + ch.phase) / ch.omega * microseconds + offset
+                t1 = (ch.openings[i] +
+                      ch.phase) / ch.omega * microseconds + offset
+                t2 = (ch.openings[i + 1] +
+                      ch.phase) / ch.omega * microseconds + offset
                 ax.plot([t1, t2], dist, color="C{}".format(i // 2))
             ax.text(t2 + (t2 - t1),
                     ch.distance,
@@ -60,11 +62,7 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
     # Now find frame boundaries and draw frames
     frames = {}
     for det in info["detector_positions"]:
-        frames[det] = {
-            "left_edges": [],
-            "right_edges": [],
-            "shifts": []
-        }
+        frames[det] = {"left_edges": [], "right_edges": [], "shifts": []}
 
     for i in range(info["nframes"]):
 
@@ -99,14 +97,14 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
         b2 = y1 - a2 * x1
 
         # Compute frame shifts from WFM chopper openings centre of mass
-        s0 = (choppers["WFM1"].openings[i * 2] +
-            choppers["WFM1"].phase) / choppers["WFM1"].omega * microseconds + offset
-        s1 = (choppers["WFM1"].openings[i * 2 + 1] +
-            choppers["WFM1"].phase) / choppers["WFM1"].omega * microseconds + offset
-        s2 = (choppers["WFM2"].openings[i * 2] +
-            choppers["WFM2"].phase) / choppers["WFM2"].omega * microseconds + offset
-        s3 = (choppers["WFM2"].openings[i * 2 + 1] +
-            choppers["WFM2"].phase) / choppers["WFM2"].omega * microseconds + offset
+        s0 = (choppers["WFM1"].openings[i * 2] + choppers["WFM1"].phase
+              ) / choppers["WFM1"].omega * microseconds + offset
+        s1 = (choppers["WFM1"].openings[i * 2 + 1] + choppers["WFM1"].phase
+              ) / choppers["WFM1"].omega * microseconds + offset
+        s2 = (choppers["WFM2"].openings[i * 2] + choppers["WFM2"].phase
+              ) / choppers["WFM2"].omega * microseconds + offset
+        s3 = (choppers["WFM2"].openings[i * 2 + 1] + choppers["WFM2"].phase
+              ) / choppers["WFM2"].omega * microseconds + offset
         shift = -0.25 * (s0 + s1 + s2 + s3)
 
         for det in info["detector_positions"]:
@@ -122,15 +120,25 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
 
         if plot:
             col = "C{}".format(i)
-            ax.fill([x0, x1, frames[det_last]["left_edges"][-1],
-                frames[det_last]["right_edges"][-1]],
-                [y0, y1, info["detector_positions"][det_last],
-                info["detector_positions"][det_last]], alpha=0.3, color=col)
+            ax.fill([
+                x0, x1, frames[det_last]["left_edges"][-1],
+                frames[det_last]["right_edges"][-1]
+            ], [
+                y0, y1, info["detector_positions"][det_last],
+                info["detector_positions"][det_last]
+            ],
+                    alpha=0.3,
+                    color=col)
             ax.plot([x0, frames[det_last]["right_edges"][-1]],
-                    [y0, info["detector_positions"][det_last]], color=col, lw=1)
+                    [y0, info["detector_positions"][det_last]],
+                    color=col,
+                    lw=1)
             ax.plot([x1, frames[det_last]["left_edges"][-1]],
-                    [y1, info["detector_positions"][det_last]], color=col, lw=1)
-            ax.text(0.5 * (frames[det_last]["left_edges"][-1] + frames[det_last]["right_edges"][-1]),
+                    [y1, info["detector_positions"][det_last]],
+                    color=col,
+                    lw=1)
+            ax.text(0.5 * (frames[det_last]["left_edges"][-1] +
+                           frames[det_last]["right_edges"][-1]),
                     info["detector_positions"][det_last],
                     "Frame {}".format(i + 1),
                     ha="center",
@@ -139,15 +147,10 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
     if plot:
         for det, dist in info["detector_positions"].items():
             # Plot detector location
-            ax.plot([0, np.amax(frames[det]["right_edges"])],
-                    [dist, dist],
+            ax.plot([0, np.amax(frames[det]["right_edges"])], [dist, dist],
                     lw=3,
                     color='grey')
-            ax.text(0.0,
-                    dist,
-                    det,
-                    va="bottom",
-                    ha="left")
+            ax.text(0.0, dist, det, va="bottom", ha="left")
         # Plot WFM choppers mid-point
         ax.plot([0, np.amax(frames[det_last]["right_edges"])],
                 [info["wfm_choppers_midpoint"], info["wfm_choppers_midpoint"]],
@@ -172,7 +175,9 @@ def frames_analytical(instrument=None, plot=False, offset=0.0):
         for key in frames[det]:
             frames[det][key] = np.array(frames[det][key])
         frames[det]["gaps"] = np.array([
-            0.5 * (frames[det]["right_edges"][i] + frames[det]["left_edges"][i + 1])
-            for i in range(len(frames[det]["right_edges"]) - 1)])
+            0.5 *
+            (frames[det]["right_edges"][i] + frames[det]["left_edges"][i + 1])
+            for i in range(len(frames[det]["right_edges"]) - 1)
+        ])
 
     return frames

@@ -129,7 +129,8 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
             col = "C{}".format(i)
             ax[1].axvspan(frames["left_edges"][i] + frames["shifts"][i],
                           frames["right_edges"][i] + frames["shifts"][i],
-                          color=col, alpha=0.5)
+                          color=col,
+                          alpha=0.5)
         if isinstance(plot, str):
             figname = plot
         else:
