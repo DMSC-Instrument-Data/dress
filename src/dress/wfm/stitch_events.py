@@ -37,7 +37,7 @@ def stitch_events(events=None, frames=None, plot=False, nbins=5000):
     if plot:
         import matplotlib.pyplot as plt
         # Histogram the events for plotting
-        y, edges = np.histogram(time_offset, bins=np.linspace(xmin, xmax, 513))
+        y, edges = np.histogram(time_offset, bins=np.linspace(xmin, xmax, 256))
         x = 0.5 * (edges[:-1] + edges[1:])
         fig, ax = plt.subplots(2, 1, figsize=(8, 8))
         ax[0].plot(x, y, label="Raw data")

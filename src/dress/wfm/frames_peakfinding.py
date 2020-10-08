@@ -71,6 +71,8 @@ def frames_peakfinding(data=None,
                        plot=False,
                        verbose=False,
                        nbins=512,
+                       exclude_left=None,
+                       exclude_right=None,
                        bg_threshold=0.05,
                        peak_prominence=0.05,
                        gsmooth=2,
@@ -124,13 +126,13 @@ def frames_peakfinding(data=None,
     bg_value = bg_raw + bg_threshold * (ymax - bg_raw)
     # Find the leading and trailing edges; i.e. the leftmost and rightmost
     # points that exceed the background value
-    i_start = 0
-    i_end = nx - 1
-    for i in range(nx):
+    i_start = exclude_left if exclude_left is not None else 0
+    i_end = exclude_right if exclude_right is not None else nx - 1
+    for i in range(i_start, nx):
         if y[i] > bg_value:
             i_start = i
             break
-    for i in range(nx - 1, 1, -1):
+    for i in range(i_end, 1, -1):
         if y[i] > bg_value:
             i_end = i
             break
@@ -143,9 +145,11 @@ def frames_peakfinding(data=None,
     # Check for unwanted peaks:
     # 1. If a peak is found inside the noise leading the signal, it will often
     # have a zero left base
+    if exclude_left is None:
+        exclude_left = nbins // 10
     to_be_removed = []
     for p in range(len(peaks)):
-        if params["left_bases"][p] < nbins // 10:
+        if params["left_bases"][p] < exclude_left:
             print("Removed peak number {} at x,y = {},{} because of a bad "
                   "left base".format(p, x[peaks[p]], y[peaks[p]]))
             to_be_removed.append(p)
@@ -225,8 +229,8 @@ def frames_peakfinding(data=None,
         fig.savefig(figname, bbox_inches="tight")
 
     frames = {
-        "left_edge": np.array([f[0] for f in frame_boundaries]),
-        "right_edge": np.array([f[1] for f in frame_boundaries]),
+        "left_edges": np.array([f[0] for f in frame_boundaries]),
+        "right_edges": np.array([f[1] for f in frame_boundaries]),
         "gaps": np.array(frame_gaps),
         "shifts": np.array(frame_shifts)
     }

@@ -71,9 +71,11 @@ def stitch_files(files=None, entries=None, plot=False, frames=None):
         files = files.split(",")
     elif not isinstance(files, list):
         files = [files]
+    print(frames)
 
-    v20setup = v20.setup()
-    v20frames = get_frames(instrument=v20setup)
+    # Compute WFM frame shifts and boundaries from V20 setup
+    if frames is None:
+        frames = get_frames(instrument=v20.setup())
 
     for f in files:
 
@@ -100,11 +102,11 @@ def stitch_files(files=None, entries=None, plot=False, frames=None):
         # Loop through entries and shift event tofs
         with h5py.File(outfile, "r+") as outf:
 
-            # Compute WFM frame shifts and boundaries from V20 setup
-            if frames is None:
-                v20setup = v20.setup(filename=outf)
-                # v20setup = v20.setup()
-                v20frames = get_frames(instrument=v20setup)
+            # # Compute WFM frame shifts and boundaries from V20 setup
+            # if frames is None:
+            #     # v20setup = v20.setup(filename=outf)
+            #     # v20setup = v20.setup()
+            #     # frames = get_frames(instrument=v20.setup(filename=outf))
 
             for e in entries_:
                 print("==================")
@@ -114,11 +116,11 @@ def stitch_files(files=None, entries=None, plot=False, frames=None):
                     this_plot = (outfile + "-" + e + ".pdf").replace("/", "_")
 
                 if e.count("monitor") > 0:
-                    frames = v20frames["monitor"]
+                    frames_ = frames["monitor"]
                 else:
-                    frames = v20frames["DENEX"]
+                    frames_ = frames["DENEX"]
 
                 _stitch_file(file_handle=outf,
                              entry=e,
-                             frames=frames,
+                             frames=frames_,
                              plot=this_plot)
